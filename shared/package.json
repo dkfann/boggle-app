@@ -1,0 +1,7 @@
+{
+  "name": "boggle-shared",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Wire protocol and pure Boggle rules shared by the client and server.",
+  "type": "module"
+}
