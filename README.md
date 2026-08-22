@@ -25,7 +25,11 @@ The client runs on http://localhost:5173 and proxies `/ws` to the server on
 two tabs are two players.
 
 For a production build, `npm run build` then `npm start`, which serves the built
-client and the WebSocket from a single origin on port 3001.
+client and the WebSocket from a single origin on port 3001. `npm run build` is
+self-sufficient - it installs `client/` and `server/` dependencies itself
+(devDependencies included, regardless of `NODE_ENV`), so it works as a
+platform's Build Command straight from a fresh clone with no separate install
+step to configure.
 
 ```bash
 npm test
