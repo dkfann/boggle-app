@@ -15,7 +15,7 @@
   --radius-sm: 8px;
 
   color-scheme: dark;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -375,6 +375,14 @@ h3 {
   width: 100%;
   max-width: 34rem;
   margin: 0 auto;
+  /* The tray the dice sit in - recessed a shade darker than the page behind
+     it, so the cubes read as resting in something rather than floating. */
+  padding: clamp(0.55rem, 2.2vw, 1rem);
+  border-radius: calc(var(--radius) + 6px);
+  background: linear-gradient(165deg, #11151f 0%, #05070c 100%);
+  box-shadow:
+    inset 0 2px 8px rgba(0, 0, 0, 0.55),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .board__grid {
@@ -393,19 +401,36 @@ h3 {
   position: relative;
   display: grid;
   place-items: center;
-  border: 1px solid var(--border);
-  border-radius: clamp(8px, 2%, 16px);
-  background: linear-gradient(180deg, #232d43 0%, #1a2233 100%);
-  color: var(--text);
+  border: 1px solid #d9c9a2;
+  border-radius: clamp(10px, 3%, 20px);
+  /* A faint mottled speckle under the main gradient keeps the cube face from
+     reading as a flat, perfectly even swatch - real moulded plastic never is. */
+  background-image: radial-gradient(circle at 22% 28%, rgba(90, 70, 30, 0.05) 0%, transparent 45%),
+    radial-gradient(circle at 72% 68%, rgba(90, 70, 30, 0.045) 0%, transparent 42%),
+    linear-gradient(155deg, #fdfaf3 0%, #f3e9d3 48%, #e6d7b6 100%);
+  color: #241a10;
   font: inherit;
   cursor: pointer;
-  /* Only transform/opacity animate, so tracing a word never triggers layout. */
-  transition: transform 90ms ease, background 90ms ease, border-color 90ms ease;
+  /* Raised cube: a hard-offset shadow reads as the visible side face, a soft
+     blurred one lifts it off the tray, and the inset pair beveled the top. */
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -3px 5px rgba(120, 95, 50, 0.16),
+    0 2px 0 #b7a179,
+    0 5px 9px rgba(5, 4, 2, 0.4);
+  /* Only transform/shadow/background animate, so tracing a word never triggers layout. */
+  transition: transform 90ms ease, box-shadow 90ms ease, background-image 90ms ease,
+    border-color 90ms ease;
   will-change: transform;
 }
 
 .die:disabled {
   cursor: default;
+}
+
+.die:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .die__letter {
@@ -426,23 +451,44 @@ h3 {
   border-radius: 999px;
   min-width: 1.15em;
   text-align: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
   pointer-events: none;
 }
 
 .die--selected {
-  background: linear-gradient(180deg, #4a3a15 0%, #3a2d10 100%);
-  border-color: var(--accent);
+  background-image: radial-gradient(circle at 25% 30%, rgba(120, 70, 10, 0.08) 0%, transparent 45%),
+    linear-gradient(155deg, #ffe9b8 0%, #f6cf7e 55%, #e8b25a 100%);
+  border-color: #c98a1f;
+  color: #3a2408;
+  /* Pressed in, rather than raised - the shadow flips inward to meet the tile's scale-down. */
+  box-shadow:
+    inset 0 2px 5px rgba(90, 50, 0, 0.35),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.35),
+    0 1px 0 #a06816,
+    0 2px 4px rgba(5, 4, 2, 0.4);
   transform: scale(0.96);
 }
 
 .die--head {
   border-color: #ffd27a;
+  box-shadow:
+    inset 0 2px 5px rgba(90, 50, 0, 0.35),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.35),
+    0 0 0 3px rgba(245, 165, 36, 0.35),
+    0 1px 0 #a06816,
+    0 2px 4px rgba(5, 4, 2, 0.4);
   transform: scale(1.02);
 }
 
 .board--hidden .die {
   color: var(--text-faint);
-  background: var(--bg-sunken);
+  background-image: linear-gradient(155deg, #2a3142 0%, #1a2032 100%);
+  border-color: #333d52;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.3),
+    0 2px 0 #10141f,
+    0 4px 8px rgba(0, 0, 0, 0.4);
 }
 
 .board__trace {
