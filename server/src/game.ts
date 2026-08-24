@@ -23,6 +23,9 @@ export function startRound(room: Room): void {
   // ~2ms for a full 4x4 solve, so the countdown covers it comfortably and the
   // results screen has the answer key ready the moment time runs out.
   room.boardWords = solveBoard(board);
+  // A fresh chat for a fresh round - see rooms.ts#addChatMessage for why
+  // chat only exists once a round has ended in the first place.
+  room.chatMessages = [];
   room.lastActivity = now;
 
   for (const player of room.players.values()) {

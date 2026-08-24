@@ -11,6 +11,7 @@ import {
 import type {
   Board,
   BoardWord,
+  ChatMessage,
   ClientMessage,
   FoundWord,
   GamePhase,
@@ -46,6 +47,7 @@ export interface GameState {
   myScore: number;
   results: PlayerResult[] | null;
   boardWords: BoardWord[] | null;
+  chatMessages: ChatMessage[];
   feedback: Feedback | null;
   error: string | null;
   /** serverTime - clientTime, so the clock is honest even if the device is not. */
@@ -98,6 +100,7 @@ const initialState: GameState = {
   myScore: 0,
   results: null,
   boardWords: null,
+  chatMessages: [],
   feedback: null,
   error: null,
   clockOffset: 0,
@@ -135,6 +138,7 @@ function reduce(state: GameState, action: Action): GameState {
             myWords: [...room.yourWords].reverse(),
             myScore: room.yourScore,
             results: room.phase === 'ended' ? state.results : null,
+            chatMessages: room.chatMessages,
             clockOffset: message.serverTime - Date.now(),
           };
         }
@@ -153,6 +157,7 @@ function reduce(state: GameState, action: Action): GameState {
             myScore: 0,
             results: null,
             boardWords: null,
+            chatMessages: [],
             feedback: null,
             error: null,
             clockOffset: message.serverTime - Date.now(),
@@ -215,6 +220,9 @@ function reduce(state: GameState, action: Action): GameState {
             feedback: null,
           };
 
+        case 'chat_message':
+          return { ...state, chatMessages: [...state.chatMessages, message.message] };
+
         case 'error':
           return { ...state, error: message.message };
 
@@ -233,6 +241,7 @@ export interface GameActions {
   setReady: (ready: boolean) => void;
   start: () => void;
   submit: (word: string, path: Path) => void;
+  sendChat: (text: string) => void;
   leave: () => void;
   dismissError: () => void;
 }
@@ -344,6 +353,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       setReady: (ready) => send({ type: 'set_ready', ready }),
       start: () => send({ type: 'start_game' }),
       submit: (word, path) => send({ type: 'submit_word', word, path }),
+      sendChat: (text) => send({ type: 'send_chat', text }),
       leave: () => {
         send({ type: 'leave' });
         sessionRef.current = null;

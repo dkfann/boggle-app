@@ -4,7 +4,7 @@ import { GAME_DURATION_MS, isValidPath, pathToWord } from '../../shared/src/rule
 import { rollBoard } from '../../shared/src/dice.js';
 import { loadDictionary } from './dictionary.js';
 import { solveBoard } from './solver.js';
-import { addPlayer, createRoom, type Room } from './rooms.js';
+import { addChatMessage, addPlayer, createRoom, type Room } from './rooms.js';
 import { endRound, startRound, submitWord, type SubmitResult } from './game.js';
 
 /** Narrow to the rejection reason, so a wrongly accepted word fails loudly. */
@@ -165,4 +165,54 @@ test('starting a round clears the previous one and hands out a fresh board', () 
   );
 
   if (room.timer) clearTimeout(room.timer);
+});
+
+test('chat only works once a round has ended, to keep hints out of live play', () => {
+  const room = playingRoom(); // phase: 'playing'
+  assert.equal(addChatMessage(room, 'host-player', 'nice board'), null, 'refused mid-round');
+
+  room.phase = 'lobby';
+  assert.equal(addChatMessage(room, 'host-player', 'gg'), null, 'refused before a round starts');
+
+  room.phase = 'ended';
+  const message = addChatMessage(room, 'host-player', 'gg all');
+  assert.ok(message, 'accepted once the round has ended');
+  assert.equal(message!.text, 'gg all');
+  assert.equal(message!.playerId, 'host-player');
+  assert.equal(message!.playerName, 'Host', 'name is resolved server-side, not trusted from the client');
+  assert.equal(room.chatMessages.length, 1);
+});
+
+test('chat refuses empty text and unknown players', () => {
+  const room = playingRoom();
+  room.phase = 'ended';
+
+  assert.equal(addChatMessage(room, 'host-player', ''), null, 'empty text refused');
+  assert.equal(addChatMessage(room, 'nobody', 'hi'), null, 'unknown player refused');
+  assert.equal(room.chatMessages.length, 0);
+});
+
+test('a fresh round clears the previous one\'s chat', () => {
+  const room = playingRoom();
+  room.phase = 'ended';
+  addChatMessage(room, 'host-player', 'well played');
+  assert.equal(room.chatMessages.length, 1);
+
+  startRound(room);
+  assert.equal(room.chatMessages.length, 0, 'chat resets alongside scores and words');
+
+  if (room.timer) clearTimeout(room.timer);
+});
+
+test('chat history is capped rather than growing without bound', () => {
+  const room = playingRoom();
+  room.phase = 'ended';
+
+  for (let i = 0; i < 205; i++) {
+    addChatMessage(room, 'host-player', `message ${i}`);
+  }
+
+  assert.equal(room.chatMessages.length, 200, 'oldest messages fall off past the cap');
+  assert.equal(room.chatMessages[0].text, 'message 5', 'the earliest 5 were dropped');
+  assert.equal(room.chatMessages.at(-1)!.text, 'message 204', 'the newest is kept');
 });

@@ -1,6 +1,7 @@
 import { memo, useMemo, useState } from 'react';
-import type { Board, BoardWord, PlayerResult } from '../../../shared/src/protocol';
+import type { Board, BoardWord, ChatMessage, PlayerResult } from '../../../shared/src/protocol';
 import BoardGrid from './BoardGrid';
+import Chat from './Chat';
 
 interface ResultsProps {
   results: PlayerResult[];
@@ -13,6 +14,8 @@ interface ResultsProps {
   onReady: (ready: boolean) => void;
   onPlayAgain: () => void;
   onLeave: () => void;
+  chatMessages: ChatMessage[];
+  onSendChat: (text: string) => void;
 }
 
 const MISSED_PREVIEW = 60;
@@ -28,6 +31,8 @@ function Results({
   onReady,
   onPlayAgain,
   onLeave,
+  chatMessages,
+  onSendChat,
 }: ResultsProps) {
   const [selectedId, setSelectedId] = useState(
     () => results.find((r) => r.playerId === playerId)?.playerId ?? results[0]?.playerId ?? ''
@@ -208,6 +213,8 @@ function Results({
           <p className="empty">Pick any word to trace it on the board.</p>
         </section>
       </div>
+
+      <Chat messages={chatMessages} playerId={playerId} onSend={onSendChat} />
 
       <div className="results__actions">
         {isHost ? (
