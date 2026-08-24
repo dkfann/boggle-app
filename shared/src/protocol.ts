@@ -118,6 +118,6 @@ export const REJECTION_TEXT: Record<WordRejection, string> = {
   'too-short': 'Too short',
   'already-found': 'Already found',
   'not-on-board': 'Not on the board',
-  'not-a-word': 'Not in dictionary',
+  'not-a-word': 'Invalid word',
   'not-playing': 'Round is not running',
 };

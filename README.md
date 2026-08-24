@@ -127,3 +127,32 @@ tremor.
 Drag across the dice, or tap them one at a time and tap the last die again to
 submit. `Enter` submits, `Escape` clears. Every die is a real focusable button,
 so the board is playable from the keyboard.
+
+## Feature flags
+
+The results screen's **Definition** panel - hover or select a word to see its
+meaning, fetched from the free [dictionaryapi.dev](https://dictionaryapi.dev)
+- sits behind `VITE_ENABLE_DEFINITIONS`. It's a build-time flag: Vite only
+exposes `VITE_`-prefixed env vars to client code, and it bakes the value into
+the bundle when `npm run build` runs. There's nothing to read it back out at
+runtime, so **flipping it always means a rebuild, not a restart.**
+
+The flag defaults on. Set it to the literal string `false` to disable the
+panel entirely - when it's off, the panel doesn't render and the app never
+calls the dictionary API, not just a hidden button (verified by grepping the
+built bundle: with the flag off, there is no trace of the feature in the
+shipped JS at all, and the bundle is a couple KB smaller).
+
+**On Render:**
+
+1. Dashboard → your service → **Environment**.
+2. Add `VITE_ENABLE_DEFINITIONS` = `false` (omit it, or set it to anything
+   else, to leave the feature on).
+3. Save, then trigger a deploy (**Manual Deploy → Deploy latest commit**) -
+   Render's autodeploy on save may already do this for you, but env var
+   changes don't retroactively affect a build that already ran.
+
+**Locally:** copy [`client/.env.example`](client/.env.example) to
+`client/.env.local` (gitignored) with the line uncommented, then restart
+`npm run dev` - Vite only reads `.env` files at startup, so a running dev
+server won't pick up a change until it restarts.

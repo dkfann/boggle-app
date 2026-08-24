@@ -162,6 +162,15 @@ h3 {
   text-transform: uppercase;
   letter-spacing: 0.09em;
   color: var(--text-dim);
+  /* The board panel's title is a hovered word, which could in principle be
+     long enough to wrap onto a second line and push the panel taller -
+     truncate instead of ever letting a header change the panel's height.
+     min-width:0 is required for the ellipsis to actually kick in on a flex
+     item, which otherwise refuses to shrink below its content's own width. */
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .panel__note {
@@ -441,9 +450,10 @@ h3 {
 }
 
 .die__order {
+  /* Position (top/right) is set inline per badge by BoardGrid - see
+     orderBadgeAnchor - since these now live in a grid-wide overlay rather
+     than inside each die. */
   position: absolute;
-  top: 6%;
-  right: 8%;
   font-size: clamp(0.6rem, 1.6vw, 0.75rem);
   font-weight: 700;
   color: #17120a;
@@ -494,6 +504,7 @@ h3 {
 .board__trace {
   position: absolute;
   inset: 0;
+  z-index: 1;
   pointer-events: none;
 }
 
@@ -504,6 +515,17 @@ h3 {
   stroke-linecap: round;
   stroke-linejoin: round;
   opacity: 0.85;
+}
+
+.board__order-layer {
+  /* Sits above the trace line (explicit z-index, since `.die`'s
+     `will-change: transform` gives every die its own stacking context - a
+     badge nested inside one could never out-rank a later sibling like the
+     line no matter its own z-index). */
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
 }
 
 /* ---------- play controls ---------- */
@@ -564,13 +586,25 @@ h3 {
   left: 50%;
   bottom: 4.5rem;
   display: flex;
-  gap: 0.6rem;
+  flex-wrap: wrap;
+  justify-content: center;
   align-items: baseline;
-  padding: 0.5rem 0.9rem;
-  border-radius: 999px;
+  gap: 0.15rem 0.6rem;
+  /* Longer words (or "Invalid word" on a narrow phone) drop the reason to its
+     own line instead of squeezing everything into one, so nothing wraps
+     mid-word - see the nowrap below. */
+  max-width: min(88vw, 22rem);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
   font-weight: 650;
+  text-align: center;
   pointer-events: none;
   animation: toast-rise 900ms ease forwards;
+}
+
+.toast strong,
+.toast span {
+  white-space: nowrap;
 }
 
 .toast--good {
@@ -975,6 +1009,74 @@ h3 {
 .chat__input {
   flex: 1;
   min-width: 0;
+}
+
+.chip--on {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.link-toggle {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 0.75rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.link-toggle:hover {
+  color: var(--text);
+}
+
+.definition-slot {
+  /* Big enough for a head line plus a 3-line clamped definition (the tallest
+     any state can be), so switching between a short/long/missing definition
+     never resizes the panel - only the content inside it changes. */
+  min-height: 5.7rem;
+}
+
+.definition {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.definition__head {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.definition__word {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+}
+
+.definition__pos {
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--text-faint);
+}
+
+.definition__text {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  /* Cap at 3 lines so an unusually long definition can't grow the panel
+     past the height reserved by .definition-slot. */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .results__actions {

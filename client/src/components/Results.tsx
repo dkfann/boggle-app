@@ -2,6 +2,8 @@ import { memo, useMemo, useState } from 'react';
 import type { Board, BoardWord, ChatMessage, PlayerResult } from '../../../shared/src/protocol';
 import BoardGrid from './BoardGrid';
 import Chat from './Chat';
+import { useWordDefinition } from '../game/useWordDefinition';
+import { DEFINITIONS_ENABLED } from '../game/featureFlags';
 
 interface ResultsProps {
   results: PlayerResult[];
@@ -37,8 +39,18 @@ function Results({
   const [selectedId, setSelectedId] = useState(
     () => results.find((r) => r.playerId === playerId)?.playerId ?? results[0]?.playerId ?? ''
   );
-  const [highlight, setHighlight] = useState<BoardWord | null>(null);
+  /**
+   * Hovering (or focusing) a word previews its trace; moving away with
+   * nothing selected clears the board entirely. Clicking a word selects it,
+   * which wins over hover from then on - it keeps showing no matter what
+   * else you hover - until you click it again to deselect. Both are tracked
+   * by word string, not the word object, so a click toggles correctly even
+   * though "found" and "missed" chips carry different object shapes.
+   */
+  const [selectedWord, setSelectedWord] = useState<string | null>(null);
+  const [hoveredWord, setHoveredWord] = useState<string | null>(null);
   const [showAllMissed, setShowAllMissed] = useState(false);
+  const [showDefinition, setShowDefinition] = useState(true);
 
   const selected = results.find((r) => r.playerId === selectedId) ?? results[0];
 
@@ -64,6 +76,18 @@ function Results({
     for (const entry of boardWords) map.set(entry.word, entry);
     return map;
   }, [boardWords]);
+
+  const highlightWord = selectedWord ?? hoveredWord;
+  const highlight = highlightWord ? pathByWord.get(highlightWord) ?? null : null;
+  // Skip the lookup entirely while the section is hidden, or the feature is
+  // off via VITE_ENABLE_DEFINITIONS - no point spending a network request on
+  // a definition nobody can see.
+  const definition = useWordDefinition(DEFINITIONS_ENABLED && showDefinition ? highlightWord : null);
+
+  /** A click on an already-selected word deselects it; any other click selects it. */
+  const toggleSelected = (word: string) => {
+    setSelectedWord((current) => (current === word ? null : word));
+  };
 
   const top = results[0];
   const tied = results.filter((r) => r.totalScore === top?.totalScore);
@@ -132,7 +156,8 @@ function Results({
               onClick={() => {
                 setSelectedId(result.playerId);
                 setShowAllMissed(false);
-                setHighlight(null);
+                setSelectedWord(null);
+                setHoveredWord(null);
               }}
             >
               {result.playerId === playerId ? 'You' : result.playerName}
@@ -153,10 +178,13 @@ function Results({
                 <li key={entry.word}>
                   <button
                     type="button"
-                    className={`chip${entry.duplicate ? ' chip--struck' : ' chip--good'}`}
-                    onMouseEnter={() => setHighlight(pathByWord.get(entry.word) ?? null)}
-                    onFocus={() => setHighlight(pathByWord.get(entry.word) ?? null)}
-                    onClick={() => setHighlight(pathByWord.get(entry.word) ?? null)}
+                    className={`chip${entry.duplicate ? ' chip--struck' : ' chip--good'}${selectedWord === entry.word ? ' chip--on' : ''}`}
+                    onMouseEnter={() => setHoveredWord(entry.word)}
+                    onMouseLeave={() => setHoveredWord(null)}
+                    onFocus={() => setHoveredWord(entry.word)}
+                    onBlur={() => setHoveredWord(null)}
+                    onClick={() => toggleSelected(entry.word)}
+                    aria-pressed={selectedWord === entry.word}
                     title={entry.duplicate ? 'Also found by another player, so it scores nothing' : undefined}
                   >
                     {entry.word}
@@ -182,10 +210,13 @@ function Results({
               <li key={entry.word}>
                 <button
                   type="button"
-                  className="chip chip--missed"
-                  onMouseEnter={() => setHighlight(entry)}
-                  onFocus={() => setHighlight(entry)}
-                  onClick={() => setHighlight(entry)}
+                  className={`chip chip--missed${selectedWord === entry.word ? ' chip--on' : ''}`}
+                  onMouseEnter={() => setHoveredWord(entry.word)}
+                  onMouseLeave={() => setHoveredWord(null)}
+                  onFocus={() => setHoveredWord(entry.word)}
+                  onBlur={() => setHoveredWord(null)}
+                  onClick={() => toggleSelected(entry.word)}
+                  aria-pressed={selectedWord === entry.word}
                 >
                   {entry.word}
                   <span className="chip__score">{entry.score}</span>
@@ -212,6 +243,46 @@ function Results({
           <BoardGrid board={board} path={highlight?.path ?? []} />
           <p className="empty">Pick any word to trace it on the board.</p>
         </section>
+
+        {DEFINITIONS_ENABLED && (
+          <section className="panel">
+            <header className="panel__header">
+              <h2>Definition</h2>
+              <button
+                type="button"
+                className="link-toggle"
+                onClick={() => setShowDefinition((visible) => !visible)}
+                aria-expanded={showDefinition}
+              >
+                {showDefinition ? 'Hide' : 'Show'}
+              </button>
+            </header>
+            {showDefinition && (
+              // Fixed height regardless of which state below renders, so
+              // sweeping across words with short/long/missing definitions
+              // never reflows the page - only the content inside changes.
+              <div className="definition-slot">
+                {!highlightWord ? (
+                  <p className="empty">Hover or select a word to see its definition.</p>
+                ) : definition.status === 'loading' ? (
+                  <p className="empty">Looking up {highlightWord.toLowerCase()}...</p>
+                ) : definition.status === 'success' ? (
+                  <div className="definition">
+                    <p className="definition__head">
+                      <span className="definition__word">{highlightWord.toLowerCase()}</span>
+                      {definition.partOfSpeech && (
+                        <span className="definition__pos">{definition.partOfSpeech}</span>
+                      )}
+                    </p>
+                    <p className="definition__text">{definition.definition}</p>
+                  </div>
+                ) : (
+                  <p className="empty">No definition found for {highlightWord.toLowerCase()}.</p>
+                )}
+              </div>
+            )}
+          </section>
+        )}
       </div>
 
       <Chat messages={chatMessages} playerId={playerId} onSend={onSendChat} />

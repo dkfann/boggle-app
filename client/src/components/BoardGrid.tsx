@@ -29,6 +29,25 @@ function center(cell: number): { x: number; y: number } {
   return { x: col * (CELL + GAP) + CELL / 2, y: row * (CELL + GAP) + CELL / 2 };
 }
 
+/**
+ * Where a cell's order badge sits, in grid-relative percentages (as CSS
+ * `top`/`right`). The badges live in their own overlay layer painted after
+ * the trace line - rather than inside each die - so the number stays
+ * readable in front of the line instead of the line drawing over it. That
+ * overlay has no per-cell frame to anchor against, so this reproduces the
+ * die-local "near the top-right corner" position in the grid's own space.
+ */
+function orderBadgeAnchor(cell: number): { top: number; right: number } {
+  const row = Math.floor(cell / BOARD_DIM);
+  const col = cell % BOARD_DIM;
+  const cellTop = row * (CELL + GAP);
+  const cellLeft = col * (CELL + GAP);
+  return {
+    top: cellTop + CELL * 0.06,
+    right: 100 - (cellLeft + CELL * 0.92),
+  };
+}
+
 function BoardGrid({
   board,
   path,
@@ -80,20 +99,38 @@ function BoardGrid({
               aria-pressed={interactive ? selected : undefined}
             >
               <span className="die__letter">{hidden ? '?' : letter}</span>
-              {selected && path.length > 1 && <span className="die__order">{index + 1}</span>}
             </button>
           );
         })}
 
         {path.length > 1 && (
-          <svg
-            className="board__trace"
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            <polyline points={points} />
-          </svg>
+          <>
+            <svg
+              className="board__trace"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <polyline points={points} />
+            </svg>
+
+            {/* Painted after the line, so the sequence numbers stay legible
+                in front of it rather than being drawn over. */}
+            <div className="board__order-layer" aria-hidden="true">
+              {path.map((cell, index) => {
+                const anchor = orderBadgeAnchor(cell);
+                return (
+                  <span
+                    key={cell}
+                    className="die__order"
+                    style={{ top: `${anchor.top}%`, right: `${anchor.right}%` }}
+                  >
+                    {index + 1}
+                  </span>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </div>
