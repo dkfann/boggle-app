@@ -3,6 +3,7 @@ import { COUNTDOWN_MS, GAME_DURATION_MS } from '../../shared/src/rules.js';
 import type { ClientMessage, Path, ServerMessage } from '../../shared/src/protocol.js';
 import {
   MAX_PLAYERS,
+  addChatMessage,
   addPlayer,
   canStart,
   createRoom,
@@ -21,6 +22,7 @@ const OPEN = 1; // WebSocket.OPEN, without importing the value at runtime
 const HEARTBEAT_MS = 30_000;
 const MAX_MESSAGES_PER_SECOND = 40;
 const MAX_NAME_LENGTH = 16;
+const MAX_CHAT_LENGTH = 300;
 const CONTROL_CHARS = /[\u0000-\u001F\u007F]/g;
 
 interface Connection {
@@ -82,6 +84,11 @@ function sanitizeName(raw: unknown): string {
   const text = typeof raw === 'string' ? raw : '';
   const cleaned = text.replace(CONTROL_CHARS, '').trim().slice(0, MAX_NAME_LENGTH);
   return cleaned || 'Player';
+}
+
+function sanitizeChatText(raw: unknown): string {
+  const text = typeof raw === 'string' ? raw : '';
+  return text.replace(CONTROL_CHARS, '').trim().slice(0, MAX_CHAT_LENGTH);
 }
 
 function sanitizeId(raw: unknown): string | null {
@@ -218,6 +225,18 @@ function handleSubmit(connection: Connection, word: string, path: Path): void {
   );
 }
 
+function handleChat(connection: Connection, rawText: unknown): void {
+  const room = connection.roomId ? getRoom(connection.roomId) : undefined;
+  if (!room) return;
+
+  const message = addChatMessage(room, connection.playerId, sanitizeChatText(rawText));
+  // Silently dropped: empty after trimming, unknown player, or the round
+  // hasn't ended yet - none of these are worth an error round-trip over.
+  if (!message) return;
+
+  broadcast(room.id, { type: 'chat_message', message });
+}
+
 function handleLeave(connection: Connection): void {
   const room = connection.roomId ? getRoom(connection.roomId) : undefined;
   const roomId = connection.roomId;
@@ -321,6 +340,9 @@ export function setupWebSocket(wss: WebSocketServer): void {
           handleSubmit(connection, message.word, path);
           break;
         }
+        case 'send_chat':
+          handleChat(connection, message.text);
+          break;
         case 'leave':
           handleLeave(connection);
           break;

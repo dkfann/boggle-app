@@ -1,12 +1,23 @@
 import { customAlphabet } from 'nanoid';
-import type { Board, FoundWord, PlayerInfo, RoomState, BoardWord, GamePhase } from '../../shared/src/protocol.js';
+import type {
+  Board,
+  BoardWord,
+  ChatMessage,
+  FoundWord,
+  GamePhase,
+  PlayerInfo,
+  RoomState,
+} from '../../shared/src/protocol.js';
 
 /** Room codes people read aloud: no 0/O/1/I to confuse. */
 const roomCode = customAlphabet('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 5);
+const messageId = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 12);
 
 export const MAX_PLAYERS = 8;
 const EMPTY_ROOM_TTL_MS = 5 * 60 * 1000;
 const IDLE_ROOM_TTL_MS = 2 * 60 * 60 * 1000;
+/** Bounds a room's chat memory; old messages fall off rather than growing forever. */
+const MAX_CHAT_HISTORY = 200;
 
 export interface Player {
   id: string;
@@ -29,6 +40,8 @@ export interface Room {
   endsAt: number | null;
   /** Full solution, computed once when the round starts so results are instant. */
   boardWords: BoardWord[] | null;
+  /** Cleared at the start of each round - see startRound in game.ts. */
+  chatMessages: ChatMessage[];
   timer: NodeJS.Timeout | null;
   lastActivity: number;
 }
@@ -48,6 +61,7 @@ export function createRoom(host: { id: string; name: string }): Room {
     startsAt: null,
     endsAt: null,
     boardWords: null,
+    chatMessages: [],
     timer: null,
     lastActivity: Date.now(),
   };
@@ -148,7 +162,33 @@ export function serializeRoom(room: Room, playerId: string): RoomState {
     yourPlayerId: playerId,
     yourWords: player ? [...player.words.values()] : [],
     yourScore: player?.score ?? 0,
+    chatMessages: room.chatMessages,
   };
+}
+
+/**
+ * Appends a chat message and returns it, or null if it was refused - either
+ * an unknown player, empty text, or the round hasn't ended yet. `text` is
+ * expected to already be trimmed/sanitized by the caller (see
+ * sanitizeChatText in ws.ts); this only enforces the room-state rules.
+ */
+export function addChatMessage(room: Room, playerId: string, text: string): ChatMessage | null {
+  const player = room.players.get(playerId);
+  if (!player || !text) return null;
+  if (room.phase !== 'ended') return null;
+
+  const message: ChatMessage = {
+    id: messageId(),
+    playerId,
+    playerName: player.name,
+    text,
+    sentAt: Date.now(),
+  };
+
+  room.chatMessages.push(message);
+  if (room.chatMessages.length > MAX_CHAT_HISTORY) room.chatMessages.shift();
+  room.lastActivity = Date.now();
+  return message;
 }
 
 export function destroyRoom(room: Room): void {

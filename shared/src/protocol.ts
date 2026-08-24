@@ -46,6 +46,19 @@ export interface PlayerResult {
   totalScore: number;
 }
 
+/**
+ * A chat message, only exchangeable once a round has ended - see
+ * rooms.ts#addChatMessage. Letting it run during play would let players
+ * trade real-time hints and undermine the duplicate-word scoring rule.
+ */
+export interface ChatMessage {
+  id: string;
+  playerId: string;
+  playerName: string;
+  text: string;
+  sentAt: number;
+}
+
 export interface RoomState {
   id: string;
   hostId: string;
@@ -58,6 +71,7 @@ export interface RoomState {
   yourPlayerId: string;
   yourWords: FoundWord[];
   yourScore: number;
+  chatMessages: ChatMessage[];
 }
 
 export type WordRejection =
@@ -72,6 +86,7 @@ export type ClientMessage =
   | { type: 'set_ready'; ready: boolean }
   | { type: 'start_game' }
   | { type: 'submit_word'; word: string; path: Path }
+  | { type: 'send_chat'; text: string }
   | { type: 'leave' }
   | { type: 'pong' };
 
@@ -95,6 +110,7 @@ export type ServerMessage =
       boardWords: BoardWord[];
       board: Board;
     }
+  | { type: 'chat_message'; message: ChatMessage }
   | { type: 'error'; message: string }
   | { type: 'ping' };
 

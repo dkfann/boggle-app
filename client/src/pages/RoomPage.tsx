@@ -81,6 +81,8 @@ export default function RoomPage() {
           onReady={actions.setReady}
           onPlayAgain={actions.start}
           onLeave={leave}
+          chatMessages={state.chatMessages}
+          onSendChat={actions.sendChat}
         />
       </main>
     );

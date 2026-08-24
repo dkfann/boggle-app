@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Results from '../components/Results';
+import type { ChatMessage } from '../../../shared/src/protocol';
 import {
   DEBUG_BOARD,
   DEBUG_BOARD_WORDS,
@@ -15,6 +16,7 @@ import {
  */
 export default function DebugResults() {
   const [isReady, setIsReady] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
   return (
     <main className="room">
@@ -31,6 +33,19 @@ export default function DebugResults() {
         onLeave={() => {
           window.location.href = '/';
         }}
+        chatMessages={chatMessages}
+        onSendChat={(text) =>
+          setChatMessages((current) => [
+            ...current,
+            {
+              id: `debug-${current.length}`,
+              playerId: DEBUG_PLAYER_ID,
+              playerName: 'You',
+              text,
+              sentAt: Date.now(),
+            },
+          ])
+        }
       />
     </main>
   );
