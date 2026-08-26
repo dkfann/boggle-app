@@ -973,6 +973,12 @@ h3 {
   overflow-y: auto;
 }
 
+/* Matches .chat__list's bottom margin above, so the form sits the same
+   distance away whether chat is empty or already has messages. */
+.chat .empty {
+  margin-bottom: 0.75rem;
+}
+
 .chat__row {
   display: flex;
   flex-direction: column;
