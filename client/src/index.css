@@ -1008,7 +1008,11 @@ h3 {
 
 .chat__input {
   flex: 1;
-  min-width: 0;
+  /* Firefox for Android zooms in on focus if a text input renders too
+     narrow, regardless of its font-size (unlike iOS Safari's font-size-only
+     heuristic) - keeping a floor here stops it competing down to nothing
+     next to the Send button on small screens. */
+  min-width: 8rem;
 }
 
 .chip--on {
