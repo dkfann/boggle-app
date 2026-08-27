@@ -72,6 +72,8 @@ export interface RoomState {
   yourWords: FoundWord[];
   yourScore: number;
   chatMessages: ChatMessage[];
+  /** The room's current round length - the default until a round has been played, then whatever it was last started with. */
+  durationMs: number;
 }
 
 export type WordRejection =
@@ -84,7 +86,7 @@ export type WordRejection =
 export type ClientMessage =
   | { type: 'join'; roomId: string | null; playerId: string; playerName: string }
   | { type: 'set_ready'; ready: boolean }
-  | { type: 'start_game' }
+  | { type: 'start_game'; durationMs: number }
   | { type: 'submit_word'; word: string; path: Path }
   | { type: 'send_chat'; text: string }
   | { type: 'leave' }
@@ -98,6 +100,7 @@ export type ServerMessage =
       board: Board;
       startsAt: number;
       endsAt: number;
+      durationMs: number;
       serverTime: number;
     }
   | { type: 'word_accepted'; word: string; score: number; path: Path; total: number }

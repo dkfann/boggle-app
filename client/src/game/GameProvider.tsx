@@ -21,6 +21,7 @@ import type {
   ServerMessage,
   WordRejection,
 } from '../../../shared/src/protocol';
+import { DEFAULT_GAME_DURATION_MS } from '../../../shared/src/rules';
 
 export type ConnectionStatus = 'connecting' | 'online' | 'offline';
 
@@ -43,6 +44,8 @@ export interface GameState {
   board: Board | null;
   startsAt: number | null;
   endsAt: number | null;
+  /** The room's current round length - see RoomState.durationMs. */
+  durationMs: number;
   myWords: FoundWord[];
   myScore: number;
   results: PlayerResult[] | null;
@@ -96,6 +99,7 @@ const initialState: GameState = {
   board: null,
   startsAt: null,
   endsAt: null,
+  durationMs: DEFAULT_GAME_DURATION_MS,
   myWords: [],
   myScore: 0,
   results: null,
@@ -134,6 +138,7 @@ function reduce(state: GameState, action: Action): GameState {
             board: room.board,
             startsAt: room.startsAt,
             endsAt: room.endsAt,
+            durationMs: room.durationMs,
             // Newest first: the list reads as a feed while playing.
             myWords: [...room.yourWords].reverse(),
             myScore: room.yourScore,
@@ -153,6 +158,7 @@ function reduce(state: GameState, action: Action): GameState {
             board: message.board,
             startsAt: message.startsAt,
             endsAt: message.endsAt,
+            durationMs: message.durationMs,
             myWords: [],
             myScore: 0,
             results: null,
@@ -239,7 +245,7 @@ function reduce(state: GameState, action: Action): GameState {
 export interface GameActions {
   join: (roomId: string | null, name: string) => void;
   setReady: (ready: boolean) => void;
-  start: () => void;
+  start: (durationMs: number) => void;
   submit: (word: string, path: Path) => void;
   sendChat: (text: string) => void;
   leave: () => void;
@@ -351,7 +357,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         send({ type: 'join', roomId, playerId, playerName: name });
       },
       setReady: (ready) => send({ type: 'set_ready', ready }),
-      start: () => send({ type: 'start_game' }),
+      start: (durationMs) => send({ type: 'start_game', durationMs }),
       submit: (word, path) => send({ type: 'submit_word', word, path }),
       sendChat: (text) => send({ type: 'send_chat', text }),
       leave: () => {

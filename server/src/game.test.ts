@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { GAME_DURATION_MS, isValidPath, pathToWord } from '../../shared/src/rules.js';
+import { isValidPath, pathToWord } from '../../shared/src/rules.js';
 import { rollBoard } from '../../shared/src/dice.js';
 import { loadDictionary } from './dictionary.js';
 import { solveBoard } from './solver.js';
@@ -160,8 +160,8 @@ test('starting a round clears the previous one and hands out a fresh board', () 
   assert.ok(room.boardWords!.length > 0, 'the answer key is ready before play begins');
   assert.equal(
     room.endsAt! - room.startsAt!,
-    GAME_DURATION_MS,
-    'the round runs for exactly the configured duration'
+    room.durationMs,
+    'the round runs for exactly the room-configured duration'
   );
 
   if (room.timer) clearTimeout(room.timer);

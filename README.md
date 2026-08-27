@@ -1,7 +1,8 @@
 # Boggle
 
 Real-time multiplayer Boggle. Host a room, share the code, and race the same
-board for 90 seconds. Scoring follows the
+board - the host picks 2, 3 (the default), or 5 minutes in the lobby. Scoring
+follows the
 [official rules](https://officialgamerules.org/game-rules/boggle/), including
 the rule that trips people up most: any word two players both find is struck
 from both lists.
@@ -46,7 +47,7 @@ npm test
 | `Qu` is one die but two letters | one face is the string `"Qu"` throughout |
 | 3-4 = 1, 5 = 2, 6 = 3, 7 = 5, 8+ = 11 | `scoreWord` |
 | Duplicate words struck from every list | `endRound` in `server/src/game.ts` |
-| 90 second round | `GAME_DURATION_MS` |
+| Host-selectable round length: 2, 3 (default) or 5 minutes | `DURATION_OPTIONS` in `shared/src/rules.ts` |
 
 Every rule lives in `shared/`, imported by both sides, so the client's instant
 feedback and the server's authoritative ruling can never disagree.

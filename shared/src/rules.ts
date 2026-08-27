@@ -14,8 +14,23 @@ export const BOARD_DIM = 4;
 export const BOARD_SIZE = BOARD_DIM * BOARD_DIM; // 16 dice
 export const MIN_WORD_LENGTH = 3;
 
-/** Game length. Official Boggle is 3 minutes; this app is spec'd at 90 seconds. */
-export const GAME_DURATION_MS = 90 * 1000;
+export interface DurationOption {
+  ms: number;
+  label: string;
+}
+
+/** Round lengths offered in the lobby. Official Boggle is 3 minutes - that's the default. */
+export const DURATION_OPTIONS: readonly DurationOption[] = [
+  { ms: 120_000, label: 'Short' },
+  { ms: 180_000, label: 'Default' },
+  { ms: 300_000, label: 'Long' },
+];
+
+export const DEFAULT_GAME_DURATION_MS = 180_000;
+
+export function isValidDuration(ms: number): boolean {
+  return DURATION_OPTIONS.some((option) => option.ms === ms);
+}
 
 /** Countdown shown to every player before the board is revealed, so nobody gets a head start. */
 export const COUNTDOWN_MS = 3000;
