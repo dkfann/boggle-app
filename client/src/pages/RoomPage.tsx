@@ -78,8 +78,9 @@ export default function RoomPage() {
           isHost={isHost}
           canPlayAgain={everyoneReady}
           isReady={me?.isReady ?? false}
+          durationMs={state.durationMs}
           onReady={actions.setReady}
-          onPlayAgain={actions.start}
+          onPlayAgain={() => actions.start(state.durationMs)}
           onLeave={leave}
           chatMessages={state.chatMessages}
           onSendChat={actions.sendChat}
@@ -99,6 +100,7 @@ export default function RoomPage() {
           playerId={state.playerId}
           isHost={isHost}
           canStart={everyoneReady && state.status === 'online'}
+          durationMs={state.durationMs}
           onReady={actions.setReady}
           onStart={actions.start}
           onLeave={leave}

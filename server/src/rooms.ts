@@ -8,6 +8,7 @@ import type {
   PlayerInfo,
   RoomState,
 } from '../../shared/src/protocol.js';
+import { DEFAULT_GAME_DURATION_MS } from '../../shared/src/rules.js';
 
 /** Room codes people read aloud: no 0/O/1/I to confuse. */
 const roomCode = customAlphabet('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 5);
@@ -44,6 +45,8 @@ export interface Room {
   chatMessages: ChatMessage[];
   timer: NodeJS.Timeout | null;
   lastActivity: number;
+  /** The default until a round has been played, then whatever it was last started with. */
+  durationMs: number;
 }
 
 const rooms = new Map<string, Room>();
@@ -64,6 +67,7 @@ export function createRoom(host: { id: string; name: string }): Room {
     chatMessages: [],
     timer: null,
     lastActivity: Date.now(),
+    durationMs: DEFAULT_GAME_DURATION_MS,
   };
   addPlayer(room, host.id, host.name);
   rooms.set(id, room);
@@ -163,6 +167,7 @@ export function serializeRoom(room: Room, playerId: string): RoomState {
     yourWords: player ? [...player.words.values()] : [],
     yourScore: player?.score ?? 0,
     chatMessages: room.chatMessages,
+    durationMs: room.durationMs,
   };
 }
 

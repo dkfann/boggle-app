@@ -2,9 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   BOARD_SIZE,
+  DEFAULT_GAME_DURATION_MS,
+  DURATION_OPTIONS,
   MIN_WORD_LENGTH,
   NEIGHBORS,
   areAdjacent,
+  isValidDuration,
   isValidPath,
   pathToWord,
   scoreWord,
@@ -65,6 +68,18 @@ test('a path spells its word, expanding the Qu die', () => {
 
 test('minimum word length is three letters', () => {
   assert.equal(MIN_WORD_LENGTH, 3);
+});
+
+test('the default round length is one of the offered options', () => {
+  assert.ok(DURATION_OPTIONS.some((option) => option.ms === DEFAULT_GAME_DURATION_MS));
+  assert.equal(DURATION_OPTIONS.find((o) => o.label === 'Default')?.ms, DEFAULT_GAME_DURATION_MS);
+});
+
+test('duration validation only accepts the offered options', () => {
+  for (const option of DURATION_OPTIONS) assert.ok(isValidDuration(option.ms));
+  assert.ok(!isValidDuration(90_000), 'not one of the offered options');
+  assert.ok(!isValidDuration(0));
+  assert.ok(!isValidDuration(-120_000));
 });
 
 /**

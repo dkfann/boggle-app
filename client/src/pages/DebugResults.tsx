@@ -4,6 +4,7 @@ import type { ChatMessage } from '../../../shared/src/protocol';
 import {
   DEBUG_BOARD,
   DEBUG_BOARD_WORDS,
+  DEBUG_DURATION_MS,
   DEBUG_PLAYER_ID,
   DEBUG_RESULTS,
 } from '../game/debugResultsFixture';
@@ -28,6 +29,7 @@ export default function DebugResults() {
         isHost={false}
         canPlayAgain={false}
         isReady={isReady}
+        durationMs={DEBUG_DURATION_MS}
         onReady={setIsReady}
         onPlayAgain={() => {}}
         onLeave={() => {

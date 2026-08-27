@@ -1,6 +1,5 @@
 import {
   COUNTDOWN_MS,
-  GAME_DURATION_MS,
   MIN_WORD_LENGTH,
   isValidPath,
   pathToWord,
@@ -19,7 +18,7 @@ export function startRound(room: Room): void {
   room.board = board;
   room.phase = 'countdown';
   room.startsAt = now + COUNTDOWN_MS;
-  room.endsAt = now + COUNTDOWN_MS + GAME_DURATION_MS;
+  room.endsAt = now + COUNTDOWN_MS + room.durationMs;
   // ~2ms for a full 4x4 solve, so the countdown covers it comfortably and the
   // results screen has the answer key ready the moment time runs out.
   room.boardWords = solveBoard(board);

@@ -42,7 +42,7 @@ export default function Home() {
     <main className="home">
       <header className="home__hero">
         <h1 className="home__title">Boggle</h1>
-        <p className="home__tagline">90 seconds. One board. Duplicate words cancel out.</p>
+        <p className="home__tagline">Pick your pace. One board. Duplicate words cancel out.</p>
       </header>
 
       {state.error && (

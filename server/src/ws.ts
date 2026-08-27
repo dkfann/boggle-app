@@ -1,5 +1,5 @@
 import type { WebSocket, WebSocketServer } from 'ws';
-import { COUNTDOWN_MS, GAME_DURATION_MS } from '../../shared/src/rules.js';
+import { COUNTDOWN_MS, isValidDuration } from '../../shared/src/rules.js';
 import type { ClientMessage, Path, ServerMessage } from '../../shared/src/protocol.js';
 import {
   MAX_PLAYERS,
@@ -109,7 +109,7 @@ function sanitizePath(raw: unknown): Path | null {
 
 /**
  * Drive the round's clock: reveal the board after the countdown, then close
- * scoring exactly when GAME_DURATION_MS is up. The timestamps in the messages
+ * scoring exactly when room.durationMs is up. The timestamps in the messages
  * are what the UI counts against; these timers only flip server-side state.
  */
 function scheduleRound(room: Room): void {
@@ -125,7 +125,7 @@ function scheduleRound(room: Room): void {
         boardWords: room.boardWords ?? [],
         board: room.board ?? [],
       });
-    }, GAME_DURATION_MS);
+    }, room.durationMs);
   }, COUNTDOWN_MS);
 }
 
@@ -168,7 +168,7 @@ function handleJoin(connection: Connection, roomIdRaw: string | null, name: stri
   );
 }
 
-function handleStart(connection: Connection): void {
+function handleStart(connection: Connection, durationMs: unknown): void {
   const room = connection.roomId ? getRoom(connection.roomId) : undefined;
   if (!room) return;
 
@@ -181,6 +181,12 @@ function handleStart(connection: Connection): void {
     return;
   }
 
+  // An invalid or tampered value just falls back to the room's existing
+  // duration rather than erroring the round out.
+  if (typeof durationMs === 'number' && isValidDuration(durationMs)) {
+    room.durationMs = durationMs;
+  }
+
   startRound(room);
   scheduleRound(room);
 
@@ -189,6 +195,7 @@ function handleStart(connection: Connection): void {
     board: room.board!,
     startsAt: room.startsAt!,
     endsAt: room.endsAt!,
+    durationMs: room.durationMs,
     serverTime: Date.now(),
   });
   broadcast(room.id, { type: 'room_update', players: listPlayers(room), hostId: room.hostId });
@@ -332,7 +339,7 @@ export function setupWebSocket(wss: WebSocketServer): void {
           break;
         }
         case 'start_game':
-          handleStart(connection);
+          handleStart(connection, message.durationMs);
           break;
         case 'submit_word': {
           const path = sanitizePath(message.path);

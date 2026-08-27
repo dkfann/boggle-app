@@ -4,6 +4,7 @@ import BoardGrid from './BoardGrid';
 import Chat from './Chat';
 import { useWordDefinition } from '../game/useWordDefinition';
 import { DEFINITIONS_ENABLED } from '../game/featureFlags';
+import { describeDuration } from '../game/formatDuration';
 
 interface ResultsProps {
   results: PlayerResult[];
@@ -13,6 +14,7 @@ interface ResultsProps {
   isHost: boolean;
   canPlayAgain: boolean;
   isReady: boolean;
+  durationMs: number;
   onReady: (ready: boolean) => void;
   onPlayAgain: () => void;
   onLeave: () => void;
@@ -30,6 +32,7 @@ function Results({
   isHost,
   canPlayAgain,
   isReady,
+  durationMs,
   onReady,
   onPlayAgain,
   onLeave,
@@ -102,9 +105,20 @@ function Results({
             ? `Tied at ${top.totalScore}`
             : `${top?.playerName ?? 'Nobody'} wins with ${top?.totalScore ?? 0}`}
         </h1>
-        <p className="results__sub">
-          The board held {boardWords.length} words worth {boardTotal} points.
-        </p>
+        <div className="results__stats">
+          <span className="results__stat">
+            <span className="results__stat-label">Total words</span>
+            <span className="results__stat-value">{boardWords.length}</span>
+          </span>
+          <span className="results__stat">
+            <span className="results__stat-label">Total board value</span>
+            <span className="results__stat-value">{boardTotal}</span>
+          </span>
+          <span className="results__stat">
+            <span className="results__stat-label">Duration</span>
+            <span className="results__stat-value">{describeDuration(durationMs)}</span>
+          </span>
+        </div>
       </header>
 
       <table className="table">

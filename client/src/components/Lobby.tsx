@@ -1,15 +1,7 @@
 import { memo, useState } from 'react';
 import type { PlayerInfo } from '../../../shared/src/protocol';
-import { GAME_DURATION_MS } from '../../../shared/src/rules';
-
-/** "90 seconds" or "2 minutes" - whichever reads naturally for the configured duration. */
-function describeDuration(ms: number): string {
-  if (ms % 60_000 === 0) {
-    const minutes = ms / 60_000;
-    return `${minutes} minute${minutes === 1 ? '' : 's'}`;
-  }
-  return `${ms / 1000} seconds`;
-}
+import { DURATION_OPTIONS } from '../../../shared/src/rules';
+import { describeDuration } from '../game/formatDuration';
 
 interface LobbyProps {
   roomId: string;
@@ -17,8 +9,10 @@ interface LobbyProps {
   playerId: string;
   isHost: boolean;
   canStart: boolean;
+  /** The room's current round length - the default, or whatever it was last started with. */
+  durationMs: number;
   onReady: (ready: boolean) => void;
-  onStart: () => void;
+  onStart: (durationMs: number) => void;
   onLeave: () => void;
 }
 
@@ -28,11 +22,15 @@ function Lobby({
   playerId,
   isHost,
   canStart,
+  durationMs,
   onReady,
   onStart,
   onLeave,
 }: LobbyProps) {
   const [copied, setCopied] = useState(false);
+  // Only the host's pick matters - non-hosts just display the room's current
+  // duration below, since there's nothing for them to choose.
+  const [selectedDuration, setSelectedDuration] = useState(durationMs);
   const me = players.find((player) => player.id === playerId);
 
   const copyInvite = async () => {
@@ -80,10 +78,34 @@ function Lobby({
 
       <section className="panel">
         <header className="panel__header">
+          <h2>Round length</h2>
+        </header>
+        {isHost ? (
+          <div className="tabs" role="radiogroup" aria-label="Round length">
+            {DURATION_OPTIONS.map((option) => (
+              <button
+                key={option.ms}
+                type="button"
+                role="radio"
+                aria-checked={selectedDuration === option.ms}
+                className={`tabs__tab${selectedDuration === option.ms ? ' tabs__tab--on' : ''}`}
+                onClick={() => setSelectedDuration(option.ms)}
+              >
+                {option.label} ({describeDuration(option.ms)})
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="empty">{describeDuration(durationMs)}, set by the host.</p>
+        )}
+      </section>
+
+      <section className="panel">
+        <header className="panel__header">
           <h2>How it works</h2>
         </header>
         <ul className="rules">
-          <li>{describeDuration(GAME_DURATION_MS)} on the clock.</li>
+          <li>{describeDuration(isHost ? selectedDuration : durationMs)} on the clock.</li>
           <li>Trace words through dice that touch - sideways, down or diagonally.</li>
           <li>No die twice in one word. Three letters minimum. Qu counts as two.</li>
           <li>3-4 letters score 1, 5 score 2, 6 score 3, 7 score 5, 8+ score 11.</li>
@@ -93,7 +115,12 @@ function Lobby({
 
       <div className="lobby__actions">
         {isHost ? (
-          <button type="button" className="button" onClick={onStart} disabled={!canStart}>
+          <button
+            type="button"
+            className="button"
+            onClick={() => onStart(selectedDuration)}
+            disabled={!canStart}
+          >
             Start round
           </button>
         ) : (
