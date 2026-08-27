@@ -24,11 +24,14 @@ const DEBOUNCE_MS = 300;
 const cache = new Map<string, DefinitionResult>();
 
 /**
- * Looks up `word` against the free dictionaryapi.dev API. The API's failure
- * responses are inconsistent in practice (sometimes a documented 404, seen
- * in testing to sometimes be a bare 502 with a plain-text body) - rather than
- * trust any particular error shape, any non-OK response or parse failure is
- * just treated as "no definition available".
+ * Looks up `word` against our own server's /api/define, which answers
+ * entirely from a local WordNet database - no outbound network call, so
+ * nothing to rate-limit (this replaced a call to the free dictionaryapi.dev
+ * API after its shared Cloudflare tier started throttling us). A "not
+ * found" is a real answer from our server (WordNet has no entry - it skips
+ * function words like "its") and gets cached; anything else - our server
+ * erroring, the request failing - is left uncached so the next hover gets
+ * a fresh attempt instead of being stuck on it.
  */
 export function useWordDefinition(word: string | null): DefinitionResult {
   const [result, setResult] = useState<DefinitionResult>(IDLE);
@@ -51,24 +54,20 @@ export function useWordDefinition(word: string | null): DefinitionResult {
 
     const timer = window.setTimeout(async () => {
       try {
-        const response = await fetch(
-          `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(key)}`,
-          { signal: controller.signal }
-        );
+        const response = await fetch(`/api/define/${encodeURIComponent(key)}`, {
+          signal: controller.signal,
+        });
 
         if (!response.ok) {
-          cache.set(key, NOT_FOUND);
-          setResult(NOT_FOUND);
+          if (!controller.signal.aborted) setResult(ERROR);
           return;
         }
 
         const data = await response.json();
-        const meaning = data?.[0]?.meanings?.[0];
-        const definition: string | undefined = meaning?.definitions?.[0]?.definition;
-
-        const outcome: DefinitionResult = definition
-          ? { status: 'success', partOfSpeech: meaning.partOfSpeech, definition }
-          : NOT_FOUND;
+        const outcome: DefinitionResult =
+          data.status === 'success'
+            ? { status: 'success', partOfSpeech: data.partOfSpeech, definition: data.definition }
+            : NOT_FOUND;
         cache.set(key, outcome);
         setResult(outcome);
       } catch {
