@@ -649,6 +649,25 @@ h3 {
   backdrop-filter: blur(2px);
 }
 
+/* Hidden mode's memorize countdown - the board stays visible on purpose, so
+   this sits in normal flow below it instead of covering it. */
+.countdown--bar {
+  position: static;
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0;
+  background: none;
+  backdrop-filter: none;
+  padding: 0.75rem 0 0;
+}
+
+.countdown--bar .countdown__number {
+  font-size: 1.5rem;
+}
+
 .countdown__number {
   font-size: clamp(4rem, 18vw, 8rem);
   font-weight: 800;

@@ -5,6 +5,7 @@ import {
   DEBUG_BOARD,
   DEBUG_BOARD_WORDS,
   DEBUG_DURATION_MS,
+  DEBUG_MODE,
   DEBUG_PLAYER_ID,
   DEBUG_RESULTS,
 } from '../game/debugResultsFixture';
@@ -30,6 +31,7 @@ export default function DebugResults() {
         canPlayAgain={false}
         isReady={isReady}
         durationMs={DEBUG_DURATION_MS}
+        mode={DEBUG_MODE}
         onReady={setIsReady}
         onPlayAgain={() => {}}
         onLeave={() => {

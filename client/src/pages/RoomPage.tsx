@@ -79,8 +79,9 @@ export default function RoomPage() {
           canPlayAgain={everyoneReady}
           isReady={me?.isReady ?? false}
           durationMs={state.durationMs}
+          mode={state.mode}
           onReady={actions.setReady}
-          onPlayAgain={() => actions.start(state.durationMs)}
+          onPlayAgain={() => actions.start(state.durationMs, state.mode)}
           onLeave={leave}
           chatMessages={state.chatMessages}
           onSendChat={actions.sendChat}
@@ -101,6 +102,7 @@ export default function RoomPage() {
           isHost={isHost}
           canStart={everyoneReady && state.status === 'online'}
           durationMs={state.durationMs}
+          mode={state.mode}
           onReady={actions.setReady}
           onStart={actions.start}
           onLeave={leave}
@@ -110,6 +112,12 @@ export default function RoomPage() {
   }
 
   const playing = started && state.status === 'online';
+  // Default mode conceals the board until play starts, same as always. Hidden
+  // mode inverts that: the lead-in is the memorize window, so the board is
+  // shown then instead, and only conceals once real play begins.
+  const hiddenMode = state.mode === 'hidden';
+  const concealed = hiddenMode ? started : !started;
+  const memorizing = !started && state.startsAt !== null;
 
   return (
     <main className="room room--playing">
@@ -130,11 +138,20 @@ export default function RoomPage() {
           <PlayBoard
             board={state.board}
             enabled={playing}
-            concealed={!started}
+            concealed={concealed}
             feedback={state.feedback}
+            maskTrace={hiddenMode}
           />
-          {!started && state.startsAt !== null && (
-            <Countdown startsAt={state.startsAt} clockOffset={state.clockOffset} />
+          {memorizing && !hiddenMode && (
+            <Countdown startsAt={state.startsAt!} clockOffset={state.clockOffset} label="Get ready" />
+          )}
+          {memorizing && hiddenMode && (
+            <Countdown
+              startsAt={state.startsAt!}
+              clockOffset={state.clockOffset}
+              label="Memorize the board"
+              variant="bar"
+            />
           )}
         </div>
 

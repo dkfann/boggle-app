@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isValidPath, pathToWord } from '../../shared/src/rules.js';
+import { MEMORIZE_MS, isValidPath, pathToWord } from '../../shared/src/rules.js';
 import { rollBoard } from '../../shared/src/dice.js';
 import { loadDictionary } from './dictionary.js';
 import { solveBoard } from './solver.js';
@@ -162,6 +162,29 @@ test('starting a round clears the previous one and hands out a fresh board', () 
     room.endsAt! - room.startsAt!,
     room.durationMs,
     'the round runs for exactly the room-configured duration'
+  );
+
+  if (room.timer) clearTimeout(room.timer);
+});
+
+test('hidden mode swaps the lead-in for a longer memorize window, without eating into the round', () => {
+  const room = playingRoom();
+  room.mode = 'hidden';
+  const before = Date.now();
+
+  startRound(room);
+
+  // Two separate Date.now() calls, so allow a little slack rather than
+  // asserting exact equality against a value computed a moment earlier.
+  const leadIn = room.startsAt! - before;
+  assert.ok(
+    leadIn >= MEMORIZE_MS && leadIn <= MEMORIZE_MS + 50,
+    `lead-in should be ~${MEMORIZE_MS}ms, got ${leadIn}ms`
+  );
+  assert.equal(
+    room.endsAt! - room.startsAt!,
+    room.durationMs,
+    'the memorize window is not deducted from the round duration'
   );
 
   if (room.timer) clearTimeout(room.timer);

@@ -1,5 +1,5 @@
 import type { WebSocket, WebSocketServer } from 'ws';
-import { COUNTDOWN_MS, isValidDuration } from '../../shared/src/rules.js';
+import { COUNTDOWN_MS, MEMORIZE_MS, isValidDuration, isValidGameMode } from '../../shared/src/rules.js';
 import type { ClientMessage, Path, ServerMessage } from '../../shared/src/protocol.js';
 import {
   MAX_PLAYERS,
@@ -108,12 +108,14 @@ function sanitizePath(raw: unknown): Path | null {
 }
 
 /**
- * Drive the round's clock: reveal the board after the countdown, then close
- * scoring exactly when room.durationMs is up. The timestamps in the messages
- * are what the UI counts against; these timers only flip server-side state.
+ * Drive the round's clock: reveal the board after the lead-in (the normal
+ * countdown, or hidden mode's longer memorize window), then close scoring
+ * exactly when room.durationMs is up. The timestamps in the messages are
+ * what the UI counts against; these timers only flip server-side state.
  */
 function scheduleRound(room: Room): void {
   if (room.timer) clearTimeout(room.timer);
+  const leadIn = room.mode === 'hidden' ? MEMORIZE_MS : COUNTDOWN_MS;
 
   room.timer = setTimeout(() => {
     room.phase = 'playing';
@@ -126,7 +128,7 @@ function scheduleRound(room: Room): void {
         board: room.board ?? [],
       });
     }, room.durationMs);
-  }, COUNTDOWN_MS);
+  }, leadIn);
 }
 
 function handleJoin(connection: Connection, roomIdRaw: string | null, name: string): void {
@@ -168,7 +170,7 @@ function handleJoin(connection: Connection, roomIdRaw: string | null, name: stri
   );
 }
 
-function handleStart(connection: Connection, durationMs: unknown): void {
+function handleStart(connection: Connection, durationMs: unknown, mode: unknown): void {
   const room = connection.roomId ? getRoom(connection.roomId) : undefined;
   if (!room) return;
 
@@ -182,9 +184,12 @@ function handleStart(connection: Connection, durationMs: unknown): void {
   }
 
   // An invalid or tampered value just falls back to the room's existing
-  // duration rather than erroring the round out.
+  // setting rather than erroring the round out.
   if (typeof durationMs === 'number' && isValidDuration(durationMs)) {
     room.durationMs = durationMs;
+  }
+  if (isValidGameMode(mode)) {
+    room.mode = mode;
   }
 
   startRound(room);
@@ -196,6 +201,7 @@ function handleStart(connection: Connection, durationMs: unknown): void {
     startsAt: room.startsAt!,
     endsAt: room.endsAt!,
     durationMs: room.durationMs,
+    mode: room.mode,
     serverTime: Date.now(),
   });
   broadcast(room.id, { type: 'room_update', players: listPlayers(room), hostId: room.hostId });
@@ -339,7 +345,7 @@ export function setupWebSocket(wss: WebSocketServer): void {
           break;
         }
         case 'start_game':
-          handleStart(connection, message.durationMs);
+          handleStart(connection, message.durationMs, message.mode);
           break;
         case 'submit_word': {
           const path = sanitizePath(message.path);

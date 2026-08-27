@@ -3,11 +3,14 @@ import assert from 'node:assert/strict';
 import {
   BOARD_SIZE,
   DEFAULT_GAME_DURATION_MS,
+  DEFAULT_GAME_MODE,
   DURATION_OPTIONS,
+  GAME_MODE_OPTIONS,
   MIN_WORD_LENGTH,
   NEIGHBORS,
   areAdjacent,
   isValidDuration,
+  isValidGameMode,
   isValidPath,
   pathToWord,
   scoreWord,
@@ -73,6 +76,16 @@ test('minimum word length is three letters', () => {
 test('the default round length is one of the offered options', () => {
   assert.ok(DURATION_OPTIONS.some((option) => option.ms === DEFAULT_GAME_DURATION_MS));
   assert.equal(DURATION_OPTIONS.find((o) => o.label === 'Default')?.ms, DEFAULT_GAME_DURATION_MS);
+});
+
+test('game mode validation only accepts default or hidden', () => {
+  for (const option of GAME_MODE_OPTIONS) assert.ok(isValidGameMode(option.mode));
+  assert.ok(isValidGameMode(DEFAULT_GAME_MODE));
+  assert.ok(!isValidGameMode('visible'));
+  assert.ok(!isValidGameMode(''));
+  assert.ok(!isValidGameMode(null));
+  assert.ok(!isValidGameMode(undefined));
+  assert.ok(!isValidGameMode(1));
 });
 
 test('duration validation only accepts the offered options', () => {
