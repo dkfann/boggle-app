@@ -1,7 +1,8 @@
-import type { Board, BoardWord, PlayerResult } from '../../../shared/src/protocol';
-import { DEFAULT_GAME_DURATION_MS } from '../../../shared/src/rules';
+import type { Board, BoardWord, GameMode, PlayerResult } from '../../../shared/src/protocol';
+import { DEFAULT_GAME_DURATION_MS, DEFAULT_GAME_MODE } from '../../../shared/src/rules';
 
 export const DEBUG_DURATION_MS = DEFAULT_GAME_DURATION_MS;
+export const DEBUG_MODE: GameMode = DEFAULT_GAME_MODE;
 
 /**
  * Fixture data for `?debugResults=1` - see App.tsx. Every path below is a real,

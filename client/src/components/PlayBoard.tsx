@@ -12,13 +12,15 @@ interface PlayBoardProps {
   /** Hidden during the countdown so nobody can start early. */
   concealed: boolean;
   feedback: Feedback | null;
+  /** Hidden mode: mask the word readout so it can't be read back instead of memorized. */
+  maskTrace?: boolean;
 }
 
 /**
  * Owns the drag/tap selection so tracing a word re-renders the board only -
  * the scoreboard, timer and word list are untouched by every pointermove.
  */
-function PlayBoard({ board, enabled, concealed, feedback }: PlayBoardProps) {
+function PlayBoard({ board, enabled, concealed, feedback, maskTrace = false }: PlayBoardProps) {
   const { submit } = useGameActions();
   const selection = useSelection(board, submit, enabled);
   const { clear, commit } = selection;
@@ -42,6 +44,9 @@ function PlayBoard({ board, enabled, concealed, feedback }: PlayBoardProps) {
   }, [enabled, clear]);
 
   const tooShort = selection.word.length > 0 && selection.word.length < MIN_WORD_LENGTH;
+  // Masked to dots rather than hidden outright, so there's still feedback
+  // that the drag registered - just not which letters it touched.
+  const displayWord = maskTrace ? '•'.repeat(selection.word.length) : selection.word;
 
   return (
     <div className="play">
@@ -63,7 +68,7 @@ function PlayBoard({ board, enabled, concealed, feedback }: PlayBoardProps) {
           aria-live="polite"
           aria-label="Current word"
         >
-          {selection.word || <span className="play__hint">Drag or tap the dice to spell a word</span>}
+          {displayWord || <span className="play__hint">Drag or tap the dice to spell a word</span>}
         </div>
 
         {selection.active && (

@@ -1,6 +1,6 @@
 import { memo, useState } from 'react';
-import type { PlayerInfo } from '../../../shared/src/protocol';
-import { DURATION_OPTIONS } from '../../../shared/src/rules';
+import type { GameMode, PlayerInfo } from '../../../shared/src/protocol';
+import { DURATION_OPTIONS, GAME_MODE_OPTIONS } from '../../../shared/src/rules';
 import { describeDuration } from '../game/formatDuration';
 
 interface LobbyProps {
@@ -11,8 +11,10 @@ interface LobbyProps {
   canStart: boolean;
   /** The room's current round length - the default, or whatever it was last started with. */
   durationMs: number;
+  /** The room's current game mode - same lifecycle as durationMs. */
+  mode: GameMode;
   onReady: (ready: boolean) => void;
-  onStart: (durationMs: number) => void;
+  onStart: (durationMs: number, mode: GameMode) => void;
   onLeave: () => void;
 }
 
@@ -23,14 +25,16 @@ function Lobby({
   isHost,
   canStart,
   durationMs,
+  mode,
   onReady,
   onStart,
   onLeave,
 }: LobbyProps) {
   const [copied, setCopied] = useState(false);
   // Only the host's pick matters - non-hosts just display the room's current
-  // duration below, since there's nothing for them to choose.
+  // settings below, since there's nothing for them to choose.
   const [selectedDuration, setSelectedDuration] = useState(durationMs);
+  const [selectedMode, setSelectedMode] = useState(mode);
   const me = players.find((player) => player.id === playerId);
 
   const copyInvite = async () => {
@@ -102,10 +106,39 @@ function Lobby({
 
       <section className="panel">
         <header className="panel__header">
+          <h2>Mode</h2>
+        </header>
+        {isHost ? (
+          <div className="tabs" role="radiogroup" aria-label="Mode">
+            {GAME_MODE_OPTIONS.map((option) => (
+              <button
+                key={option.mode}
+                type="button"
+                role="radio"
+                aria-checked={selectedMode === option.mode}
+                className={`tabs__tab${selectedMode === option.mode ? ' tabs__tab--on' : ''}`}
+                onClick={() => setSelectedMode(option.mode)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="empty">
+            {GAME_MODE_OPTIONS.find((option) => option.mode === mode)?.label}, set by the host.
+          </p>
+        )}
+      </section>
+
+      <section className="panel">
+        <header className="panel__header">
           <h2>How it works</h2>
         </header>
         <ul className="rules">
           <li>{describeDuration(isHost ? selectedDuration : durationMs)} on the clock.</li>
+          {(isHost ? selectedMode : mode) === 'hidden' && (
+            <li>{GAME_MODE_OPTIONS.find((option) => option.mode === 'hidden')?.description}</li>
+          )}
           <li>Trace words through dice that touch - sideways, down or diagonally.</li>
           <li>No die twice in one word. Three letters minimum. Qu counts as two.</li>
           <li>3-4 letters score 1, 5 score 2, 6 score 3, 7 score 5, 8+ score 11.</li>
@@ -118,7 +151,7 @@ function Lobby({
           <button
             type="button"
             className="button"
-            onClick={() => onStart(selectedDuration)}
+            onClick={() => onStart(selectedDuration, selectedMode)}
             disabled={!canStart}
           >
             Start round

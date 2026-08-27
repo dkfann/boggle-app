@@ -14,6 +14,7 @@ import type {
   ChatMessage,
   ClientMessage,
   FoundWord,
+  GameMode,
   GamePhase,
   Path,
   PlayerInfo,
@@ -21,7 +22,7 @@ import type {
   ServerMessage,
   WordRejection,
 } from '../../../shared/src/protocol';
-import { DEFAULT_GAME_DURATION_MS } from '../../../shared/src/rules';
+import { DEFAULT_GAME_DURATION_MS, DEFAULT_GAME_MODE } from '../../../shared/src/rules';
 
 export type ConnectionStatus = 'connecting' | 'online' | 'offline';
 
@@ -46,6 +47,8 @@ export interface GameState {
   endsAt: number | null;
   /** The room's current round length - see RoomState.durationMs. */
   durationMs: number;
+  /** The room's current game mode - same lifecycle as durationMs. */
+  mode: GameMode;
   myWords: FoundWord[];
   myScore: number;
   results: PlayerResult[] | null;
@@ -100,6 +103,7 @@ const initialState: GameState = {
   startsAt: null,
   endsAt: null,
   durationMs: DEFAULT_GAME_DURATION_MS,
+  mode: DEFAULT_GAME_MODE,
   myWords: [],
   myScore: 0,
   results: null,
@@ -139,6 +143,7 @@ function reduce(state: GameState, action: Action): GameState {
             startsAt: room.startsAt,
             endsAt: room.endsAt,
             durationMs: room.durationMs,
+            mode: room.mode,
             // Newest first: the list reads as a feed while playing.
             myWords: [...room.yourWords].reverse(),
             myScore: room.yourScore,
@@ -159,6 +164,7 @@ function reduce(state: GameState, action: Action): GameState {
             startsAt: message.startsAt,
             endsAt: message.endsAt,
             durationMs: message.durationMs,
+            mode: message.mode,
             myWords: [],
             myScore: 0,
             results: null,
@@ -245,7 +251,7 @@ function reduce(state: GameState, action: Action): GameState {
 export interface GameActions {
   join: (roomId: string | null, name: string) => void;
   setReady: (ready: boolean) => void;
-  start: (durationMs: number) => void;
+  start: (durationMs: number, mode: GameMode) => void;
   submit: (word: string, path: Path) => void;
   sendChat: (text: string) => void;
   leave: () => void;
@@ -357,7 +363,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         send({ type: 'join', roomId, playerId, playerName: name });
       },
       setReady: (ready) => send({ type: 'set_ready', ready }),
-      start: (durationMs) => send({ type: 'start_game', durationMs }),
+      start: (durationMs, mode) => send({ type: 'start_game', durationMs, mode }),
       submit: (word, path) => send({ type: 'submit_word', word, path }),
       sendChat: (text) => send({ type: 'send_chat', text }),
       leave: () => {

@@ -35,6 +35,33 @@ export function isValidDuration(ms: number): boolean {
 /** Countdown shown to every player before the board is revealed, so nobody gets a head start. */
 export const COUNTDOWN_MS = 3000;
 
+export type GameMode = 'default' | 'hidden';
+
+export interface GameModeOption {
+  mode: GameMode;
+  label: string;
+  description: string;
+}
+
+/** Seconds players get to memorize the board in hidden mode before the letters disappear. */
+export const MEMORIZE_MS = 7000;
+
+/** Modes offered in the lobby. */
+export const GAME_MODE_OPTIONS: readonly GameModeOption[] = [
+  { mode: 'default', label: 'Default', description: 'The board stays visible for the whole round.' },
+  {
+    mode: 'hidden',
+    label: 'Hidden',
+    description: `Memorize the board for ${MEMORIZE_MS / 1000} seconds, then the letters disappear - only the squares stay put.`,
+  },
+];
+
+export const DEFAULT_GAME_MODE: GameMode = 'default';
+
+export function isValidGameMode(mode: unknown): mode is GameMode {
+  return mode === 'default' || mode === 'hidden';
+}
+
 /**
  * A board is a flat array of 16 faces, index = row * 4 + col.
  * A face is a single uppercase letter, except the Qu die which is the string "Qu".

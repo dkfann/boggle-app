@@ -1,6 +1,6 @@
-import { Board, Path } from './rules.js';
+import { Board, GameMode, Path } from './rules.js';
 
-export type { Board, Path };
+export type { Board, GameMode, Path };
 
 export type GamePhase = 'lobby' | 'countdown' | 'playing' | 'ended';
 
@@ -74,6 +74,8 @@ export interface RoomState {
   chatMessages: ChatMessage[];
   /** The room's current round length - the default until a round has been played, then whatever it was last started with. */
   durationMs: number;
+  /** The room's current game mode - same lifecycle as durationMs. */
+  mode: GameMode;
 }
 
 export type WordRejection =
@@ -86,7 +88,7 @@ export type WordRejection =
 export type ClientMessage =
   | { type: 'join'; roomId: string | null; playerId: string; playerName: string }
   | { type: 'set_ready'; ready: boolean }
-  | { type: 'start_game'; durationMs: number }
+  | { type: 'start_game'; durationMs: number; mode: GameMode }
   | { type: 'submit_word'; word: string; path: Path }
   | { type: 'send_chat'; text: string }
   | { type: 'leave' }
@@ -101,6 +103,7 @@ export type ServerMessage =
       startsAt: number;
       endsAt: number;
       durationMs: number;
+      mode: GameMode;
       serverTime: number;
     }
   | { type: 'word_accepted'; word: string; score: number; path: Path; total: number }

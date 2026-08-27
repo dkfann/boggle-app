@@ -1,5 +1,6 @@
 import { memo, useMemo, useState } from 'react';
-import type { Board, BoardWord, ChatMessage, PlayerResult } from '../../../shared/src/protocol';
+import type { Board, BoardWord, ChatMessage, GameMode, PlayerResult } from '../../../shared/src/protocol';
+import { GAME_MODE_OPTIONS } from '../../../shared/src/rules';
 import BoardGrid from './BoardGrid';
 import Chat from './Chat';
 import { useWordDefinition } from '../game/useWordDefinition';
@@ -15,6 +16,7 @@ interface ResultsProps {
   canPlayAgain: boolean;
   isReady: boolean;
   durationMs: number;
+  mode: GameMode;
   onReady: (ready: boolean) => void;
   onPlayAgain: () => void;
   onLeave: () => void;
@@ -33,6 +35,7 @@ function Results({
   canPlayAgain,
   isReady,
   durationMs,
+  mode,
   onReady,
   onPlayAgain,
   onLeave,
@@ -117,6 +120,12 @@ function Results({
           <span className="results__stat">
             <span className="results__stat-label">Duration</span>
             <span className="results__stat-value">{describeDuration(durationMs)}</span>
+          </span>
+          <span className="results__stat">
+            <span className="results__stat-label">Mode</span>
+            <span className="results__stat-value">
+              {GAME_MODE_OPTIONS.find((option) => option.mode === mode)?.label}
+            </span>
           </span>
         </div>
       </header>

@@ -1,5 +1,6 @@
 import {
   COUNTDOWN_MS,
+  MEMORIZE_MS,
   MIN_WORD_LENGTH,
   isValidPath,
   pathToWord,
@@ -14,12 +15,16 @@ import type { Room } from './rooms.js';
 export function startRound(room: Room): void {
   const board = rollBoard();
   const now = Date.now();
+  // Hidden mode's lead-in doubles as the memorize window - the board is
+  // revealed for it instead of concealed, and it does not eat into
+  // durationMs either way, so the round clock only starts once it's over.
+  const leadIn = room.mode === 'hidden' ? MEMORIZE_MS : COUNTDOWN_MS;
 
   room.board = board;
   room.phase = 'countdown';
-  room.startsAt = now + COUNTDOWN_MS;
-  room.endsAt = now + COUNTDOWN_MS + room.durationMs;
-  // ~2ms for a full 4x4 solve, so the countdown covers it comfortably and the
+  room.startsAt = now + leadIn;
+  room.endsAt = now + leadIn + room.durationMs;
+  // ~2ms for a full 4x4 solve, so the lead-in covers it comfortably and the
   // results screen has the answer key ready the moment time runs out.
   room.boardWords = solveBoard(board);
   // A fresh chat for a fresh round - see rooms.ts#addChatMessage for why

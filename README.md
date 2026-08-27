@@ -48,6 +48,7 @@ npm test
 | 3-4 = 1, 5 = 2, 6 = 3, 7 = 5, 8+ = 11 | `scoreWord` |
 | Duplicate words struck from every list | `endRound` in `server/src/game.ts` |
 | Host-selectable round length: 2, 3 (default) or 5 minutes | `DURATION_OPTIONS` in `shared/src/rules.ts` |
+| Host-selectable mode: Default, or Hidden (7s to memorize the board, then the letters vanish - the round clock only starts after) | `GAME_MODE_OPTIONS` in `shared/src/rules.ts` |
 
 Every rule lives in `shared/`, imported by both sides, so the client's instant
 feedback and the server's authoritative ruling can never disagree.
