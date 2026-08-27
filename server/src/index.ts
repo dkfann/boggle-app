@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { loadDictionary } from './dictionary.js';
 import { setupWebSocket } from './ws.js';
 import { roomCount } from './rooms.js';
+import { lookupDefinition } from './definitions.js';
 
 const PORT = Number(process.env.PORT ?? 3001);
 
@@ -23,6 +24,24 @@ setupWebSocket(wss);
 
 app.get('/health', (_req, res) => {
   res.json({ ok: true, rooms: roomCount(), uptime: process.uptime() });
+});
+
+// Letters only, capped well above any real word - not a security boundary,
+// just enough to keep obviously-junk input from reaching the lookup.
+const WORD_PATTERN = /^[A-Za-z]{1,45}$/;
+
+app.get('/api/define/:word', async (req, res) => {
+  if (!WORD_PATTERN.test(req.params.word)) {
+    res.status(400).json({ status: 'error' });
+    return;
+  }
+
+  try {
+    const definition = await lookupDefinition(req.params.word);
+    res.json(definition ? { status: 'success', ...definition } : { status: 'not-found' });
+  } catch {
+    res.status(500).json({ status: 'error' });
+  }
 });
 
 // In production the built client is served from this same origin, so the

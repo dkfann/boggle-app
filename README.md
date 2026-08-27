@@ -132,17 +132,23 @@ so the board is playable from the keyboard.
 ## Feature flags
 
 The results screen's **Definition** panel - hover or select a word to see its
-meaning, fetched from the free [dictionaryapi.dev](https://dictionaryapi.dev)
-- sits behind `VITE_ENABLE_DEFINITIONS`. It's a build-time flag: Vite only
-exposes `VITE_`-prefixed env vars to client code, and it bakes the value into
-the bundle when `npm run build` runs. There's nothing to read it back out at
-runtime, so **flipping it always means a rebuild, not a restart.**
+meaning - sits behind `VITE_ENABLE_DEFINITIONS`. It's a build-time flag: Vite
+only exposes `VITE_`-prefixed env vars to client code, and it bakes the value
+into the bundle when `npm run build` runs. There's nothing to read it back
+out at runtime, so **flipping it always means a rebuild, not a restart.**
 
 The flag defaults on. Set it to the literal string `false` to disable the
 panel entirely - when it's off, the panel doesn't render and the app never
-calls the dictionary API, not just a hidden button (verified by grepping the
+calls `/api/define`, not just a hidden button (verified by grepping the
 built bundle: with the flag off, there is no trace of the feature in the
 shipped JS at all, and the bundle is a couple KB smaller).
+
+Definitions are looked up against a local [WordNet](https://wordnet.princeton.edu/)
+database via [`wordpos`](https://www.npmjs.com/package/wordpos), served from
+`GET /api/define/:word` on our own server - not an external API, so there is
+nothing to rate limit it. WordNet skips function words (pronouns, articles,
+etc.), so a handful of valid Boggle words like "ITS" have no definition;
+that's a coverage gap in the data, not a bug.
 
 **On Render:**
 
